@@ -27,21 +27,11 @@ You can try it live here:
 
 ---
 
-## 📂 Project Structure
-Pomodoro-Timer/
-│── index.html # Main HTML file
-│── style.css # Inline or external CSS styles
-│── script.js # Timer logic, localStorage, notifications
-│── Sound/ # Alarm audio file
-│── Icons/ # App icons for PWA
-│── manifest.json # Web App manifest (for PWA install support)
-│── sw.js # Service worker (for caching & offline support)
-
-📌 Future Improvements
-Add custom timer settings (user-defined durations).
-Save completed sessions in history.
-Automatic Pomodoro to short break to long break switch
-Dark/Light theme toggle.
+## 📌 Future Improvements
+- Add custom timer settings (user-defined durations).
+- Save completed sessions in history.
+- Automatic Pomodoro to short break to long break switch
+- Dark/Light theme toggle.
 
 
 
