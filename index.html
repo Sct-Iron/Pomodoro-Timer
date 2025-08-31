@@ -178,7 +178,7 @@
     </div>
 
     <div class="buttons">
-      <button onclick="startTimer()">Start</button>
+      <button onclick="showNotificationMessage(); startTimer()">Start</button>
       <button onclick="pauseTimer()">Pause</button>
       <button onclick="resetTimer()">Reset</button>
     </div>
@@ -193,69 +193,87 @@
   <script>
     window.alert("Hi there! Welcome to Pomodoro Timer 2.0, it now features a pop up notification and a sound alarm. Stay tuned for more updates, Thank You!");
     
-    if ("Notification" in window) {
-      if (Notification.permission !=="granted" && Notification.permission !== "denied") {
-        Notification.requestPermission().then(permission => {
-          console.log("Notification permission:", permission)
+    function showNotificationMessage() {
+      if ("Notification" in window) {
+          if (Notification.permission !=="granted" && Notification.permission !== "denied") {
+               Notification.requestPermission().then(permission => {
+                    console.log("Notification permission:", permission)
         })
       }
     }
-    
-    function showNotification() {
-      if ("Notification" in window && Notification.permission === "granted") {
-        new Notification("Pomodoro Timer", {
-          body: "Timer Is Up!"
-        });
-      }
-    }
+  }
+  
     // Enable Automatic Sound Unlock on first user interaction
     function unlockSound() {
       const alarm = document.getElementById('alarm')
       alarm.play().then(() => {
       alarm.pause();
       alarm.currentTime = 0
-      }
-    ).catch(err => console.log('Sound is still locked', err))
-    document.removeEventListener('click', unlockSound);
-    }
-    document.addEventListener('click', unlockSound)
+      })
+          .catch(err => console.log('Sound is still locked', err))
+    document.removeEventListener('click', unlockSound);}
+   document.addEventListener('click', unlockSound)
     const timerDisplay = document.getElementById('timer');
-    let interval, remainingTime = 1500, currentMode = 'pomodoro';
 
-    const modeTimes = { pomodoro: 1500, shortBreak: 300, longBreak: 900};
-
+    // Progress Ring
     const circle = document.querySelector('.progress-ring__circle');
     const radius = circle.r.baseVal.value;
     const circumference = 2 * Math.PI * radius;
     circle.style.strokeDasharray = circumference;
     circle.style.strokeDashoffset = circumference;
 
-    function updateDisplay() {
+    let rafId = null;
+    let endTime = null;
+    let isRunning = false;
+    let currentMode = 'pomodoro';
+    const modeTimes = { pomodoro: 1500, shortBreak: 300, longBreak: 900};
+    let remainingTime = modeTimes[currentMode];
+    
+   function updateDisplay() {
       const m = String(Math.floor(remainingTime/60)).padStart(2,'0');
       const s = String(remainingTime%60).padStart(2,'0');
       timerDisplay.textContent = `${m}:${s}`;
       circle.style.strokeDashoffset = circumference * (1 - remainingTime/modeTimes[currentMode]);
     }
 
-    function startTimer() {
-      if (!interval) {
-        interval = setInterval(() => {
-          if (remainingTime > 0) {
-            remainingTime--; updateDisplay();
-          } else {
-            clearInterval(interval); 
-            interval = null;
-            document.getElementById('alarm').play()
-            showNotification();
-          }
-        }, 1000);
-      }
-    }
-    function pauseTimer() { clearInterval(interval); interval = null; }
-    function resetTimer() {
-      pauseTimer(); remainingTime = modeTimes[currentMode]; updateDisplay();
+    function tick() {
+      const now = Date.now();
+      remainingTime = Math.max(0, Math.ceil((endTime - now) / 1000))
+      updateDisplay();
+
+      if (remainingTime > 0 && isRunning) {
+        rafId = requestAnimationFrame(tick);
+      } else if (remainingTime === 0 && isRunning) {
+          document.getElementById('alarm').play()
+            if (navigator.serviceWorker.controller) {
+              navigator.serviceWorker.controller.postMessage('Timer Up');
+            }
+        }
     }
 
+   function startTimer() {
+        if (!isRunning) {
+       endTime = Date.now() + remainingTime * 1000;
+       isRunning = true;
+       tick()
+    }
+   }
+
+   function pauseTimer() {
+    if(isRunning) {
+     isRunning = false; 
+     if(rafId) cancelAnimationFrame(rafId);
+     rafId = null
+
+    }
+   }
+
+    function resetTimer() {
+    pauseTimer();
+    remainingTime = modeTimes[currentMode];
+    updateDisplay();
+  }
+    
     function setMode(mode, e) {
       pauseTimer(); currentMode = mode; remainingTime = modeTimes[mode]; updateDisplay();
       document.querySelectorAll('.modes button').forEach (b=>b.classList.remove('active'));
@@ -263,6 +281,9 @@
       const colors = { pomodoro:'#10ac84', shortBreak:'#00cec9', longBreak:'#6c5ce7' };
       circle.style.stroke = colors[mode];
     }   
+    document.addEventListener('visibilitychange', () => {
+    if (!isRunning && !document.hidden) tick(); // instant catch-up
+  });
      updateDisplay();
      //Service Worker 
     

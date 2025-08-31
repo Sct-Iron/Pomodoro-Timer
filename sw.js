@@ -1,7 +1,8 @@
 const CACHE_NAME = "Pomodoro version-2";
 const CACHE_ASSETS = [
+    '/',
     'index.html',
-    'manifest.JSON',
+    'manifest.json',
     'sw.js',
     'Icons/icon-192.png',
     'Icons/icon-512.png',
@@ -39,12 +40,24 @@ self.addEventListener("activate", e => {
 
 self.addEventListener("fetch", e => {
     console.log("Service Worker: Fetching");
-   e.respondWith(fetch(e.request).catch(() => caches.match(e.request)))
+   e.respondWith(caches.match(e.request).then(res => {
+    return res || fetch(e.request)
+   }))
 })
+self.addEventListener("message", e => {
+    if (e.data && e.data.type === 'Timer Up') {
+        self.registration.showNotification("Pomodoro Timer",{
+            body: "Time's Up",
+           icon: "Icons/icon-192.png",
+         badge: "Icons/icon-192.png"
+        })
+    }
+})
+
 self.addEventListener("notificationclick", e => {
     e.notification.close();
     e.waitUntil(
-    client.openWindow("/")
+    clients.openWindow("/")
     );  
 })
    
