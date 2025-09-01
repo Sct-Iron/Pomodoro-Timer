@@ -191,8 +191,6 @@
   </div>
 
   <script>
-    window.alert("Hi there! Welcome to Pomodoro Timer 2.0, it now features a pop up notification and a sound alarm. Stay tuned for more updates, Thank You!");
-    
     function showNotificationMessage() {
       if ("Notification" in window) {
           if (Notification.permission !=="granted" && Notification.permission !== "denied") {
@@ -222,7 +220,7 @@
     circle.style.strokeDasharray = circumference;
     circle.style.strokeDashoffset = circumference;
 
-    let rafId = null;
+    let intervalId = null;
     let endTime = null;
     let isRunning = false;
     let currentMode = 'pomodoro';
@@ -237,16 +235,18 @@
     }
 
     function tick() {
+      if(!isRunning) return;
+
       const now = Date.now();
       remainingTime = Math.max(0, Math.ceil((endTime - now) / 1000))
       updateDisplay();
 
-      if (remainingTime > 0 && isRunning) {
-        rafId = requestAnimationFrame(tick);
-      } else if (remainingTime === 0 && isRunning) {
+      if (remainingTime <= 0) {
+            isRunning = false;
+            clearInterval(intervalId);
           document.getElementById('alarm').play()
             if (navigator.serviceWorker.controller) {
-              navigator.serviceWorker.controller.postMessage('Timer Up');
+              navigator.serviceWorker.controller.postMessage({type:'Timer Up'});
             }
         }
     }
@@ -256,15 +256,15 @@
        endTime = Date.now() + remainingTime * 1000;
        isRunning = true;
        tick()
+       intervalId = setInterval(tick, 500)
     }
    }
 
    function pauseTimer() {
     if(isRunning) {
      isRunning = false; 
-     if(rafId) cancelAnimationFrame(rafId);
-     rafId = null
-
+    remainingTime = Math.max(0, Math.ceil((endTime - Date.now()) / 1000))
+      clearInterval(intervalId);
     }
    }
 
@@ -282,8 +282,11 @@
       circle.style.stroke = colors[mode];
     }   
     document.addEventListener('visibilitychange', () => {
-    if (!isRunning && !document.hidden) tick(); // instant catch-up
-  });
+    if (!isRunning && !document.hidden){
+       remainingTime = Math.max(0, Math.ceil((endTime - Date.now()) / 1000)); 
+       updateDisplay();
+    }
+    })
      updateDisplay();
      //Service Worker 
     

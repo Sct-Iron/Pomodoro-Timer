@@ -10,7 +10,8 @@ It helps boost productivity by following the **Pomodoro Technique** — 25 minut
 - ⏰ Three modes: **Pomodoro (25 min), Short Break (5 min), Long Break (15 min)**.  
 - 🔊 Sound alarm when the timer ends.  
 - 🔔 Browser notification support (where available).    
-- 📱 Mobile-friendly and ready to be turned into a **Progressive Web App (PWA)**.  
+- 📱 Mobile-friendly and ready to be turned into a **Progressive Web App (PWA)** and can be used offline once installed.
+-   
 
 ---
 
