@@ -45,14 +45,30 @@ self.addEventListener("fetch", e => {
    }))
 })
 self.addEventListener("message", e => {
-    if (e.data && e.data.type === 'Timer Up') {
-        self.registration.showNotification("Pomodoro Timer",{
-            body: "Time's Up",
-           icon: "Icons/icon-192.png",
-         badge: "Icons/icon-192.png"
-        })
+  if (!e.data) return;
+
+  if (e.data.type === 'timer-ended') {
+    const { mode, longCycle } = e.data;
+
+    let body = "Time's up ⏰";
+    if (mode === 'pomodoro') {
+      body = longCycle
+        ? "🎉 Four Pomodoros done! Time for a long break!"
+        : "Pomodoro complete — take a short break.";
+    } else if (mode === 'shortBreak') {
+      body = "Short break over — back to focus! 💪";
+    } else if (mode === 'longBreak') {
+      body = "Long break finished — ready for deep work? 🎯";
     }
-})
+
+    self.registration.showNotification("Pomodoro Timer", {
+      body,
+      icon: "Icons/icon-192.png",
+      badge: "Icons/icon-192.png"
+    });
+  }
+});
+
 
 self.addEventListener("notificationclick", e => {
     e.notification.close();

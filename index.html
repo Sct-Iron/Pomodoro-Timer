@@ -224,9 +224,10 @@
     let endTime = null;
     let isRunning = false;
     let currentMode = 'pomodoro';
-    const modeTimes = { pomodoro: 1500, shortBreak: 300, longBreak: 900};
+    const modeTimes = { pomodoro: 10, shortBreak: 3 , longBreak: 7};
     let remainingTime = modeTimes[currentMode];
-    
+    let sessionCount = 0;
+
    function updateDisplay() {
       const m = String(Math.floor(remainingTime/60)).padStart(2,'0');
       const s = String(remainingTime%60).padStart(2,'0');
@@ -234,23 +235,57 @@
       circle.style.strokeDashoffset = circumference * (1 - remainingTime/modeTimes[currentMode]);
     }
 
-    function tick() {
-      if(!isRunning) return;
+function tick() {
+  if (!isRunning) return;
 
-      const now = Date.now();
-      remainingTime = Math.max(0, Math.ceil((endTime - now) / 1000))
-      updateDisplay();
+  const now = Date.now();
+  remainingTime = Math.max(0, Math.ceil((endTime - now) / 1000));
+  updateDisplay();
 
-      if (remainingTime <= 0) {
-            isRunning = false;
-            clearInterval(intervalId);
-          document.getElementById('alarm').play()
-            if (navigator.serviceWorker.controller) {
-              navigator.serviceWorker.controller.postMessage({type:'Timer Up'});
-            }
-        }
+  if (remainingTime <= 0) {
+    isRunning = false;
+    clearInterval(intervalId);
+    document.getElementById('alarm').play();
+
+   
+    let isLongCycle = false;
+
+    // Notify service worker about the mode that JUST finished
+    if (navigator.serviceWorker.controller) {
+      // If we just finished a pomodoro, check if next should be a long break
+      if (currentMode === 'pomodoro') {
+        isLongCycle = ((sessionCount + 1) % 4 === 0);
+      }
+
+      navigator.serviceWorker.controller.postMessage({
+        type: 'timer-ended',       // <- standardized
+        mode: currentMode,         // 'pomodoro' | 'shortBreak' | 'longBreak'
+        longCycle: isLongCycle     // true only at the end of the 4th pomodoro
+      });
     }
 
+    // Switch to the next mode
+    if (currentMode === 'pomodoro') {
+      // increment ONLY after a pomodoro
+      sessionCount++;
+      const next = isLongCycle ? 'longBreak' : 'shortBreak';
+      setMode(next, {
+        target: document.querySelector(
+          `button[onclick*='${isLongCycle ? 'longBreak' : 'shortBreak'}']`
+        )
+      });
+    } else {
+      setMode('pomodoro', {
+        target: document.querySelector("button[onclick*='pomodoro']")
+      });
+    }
+
+ 
+    startTimer();
+  }
+}
+
+    
    function startTimer() {
         if (!isRunning) {
        endTime = Date.now() + remainingTime * 1000;
@@ -284,7 +319,7 @@
     document.addEventListener('visibilitychange', () => {
     if (!isRunning && !document.hidden){
        remainingTime = Math.max(0, Math.ceil((endTime - Date.now()) / 1000)); 
-       updateDisplay();
+       
     }
     })
      updateDisplay();
