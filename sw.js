@@ -45,7 +45,6 @@ self.addEventListener("fetch", e => {
    }))
 })
 self.addEventListener("message", e => {
-  if (!e.data) return;
 
   if (e.data.type === 'timer-ended') {
     const { mode, longCycle } = e.data;

@@ -316,13 +316,8 @@ function tick() {
       const colors = { pomodoro:'#10ac84', shortBreak:'#00cec9', longBreak:'#6c5ce7' };
       circle.style.stroke = colors[mode];
     }   
-    document.addEventListener('visibilitychange', () => {
-    if (!isRunning && !document.hidden){
-       remainingTime = Math.max(0, Math.ceil((endTime - Date.now()) / 1000)); 
-       
-    }
-    })
      updateDisplay();
+     
      //Service Worker 
     
      if ('serviceWorker' in navigator) {
@@ -336,3 +331,4 @@ function tick() {
   </script>
 </body>
 </html>
+
